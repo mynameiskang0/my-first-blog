@@ -1,0 +1,87 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+    <div class="post">
+        <h1>{{ post.title }}</h1>
+        {% if post.published_date %}
+            <div class="date">
+                {{ post.published_date }}
+            </div>
+        {% else %}
+            <a class="btn btn-default" href="{% url 'post_remove' pk=post.pk %}"><span class="glyphicon-remove"></span></a>
+        {% endif %}
+        <p>{{ post.text|linebreaksbr }}</p>
+        {% if post.image %}
+            <img class="image" src="{{ post.image.url }}"/>
+        {% endif %}
+        {% if post.video %}
+            <div class="iframe-container">
+                <div id="player"></div>
+            </div>
+
+            <script src="http://www.youtube.com/iframe_api"></script>
+
+            <script>
+
+                var player;
+
+                function onYouTubeIframeAPIReady() {
+
+                    player = new YT.Player('player', {
+
+                        width: '640', height: '390',
+
+                        videoId: videoid,
+
+                        playerVars: {'autoplay': 1, 'playsinline': 1},
+
+                        events: {'onReady': onPlayerReady}
+
+                    });
+
+                }
+
+                function onPlayerReady(e) {
+
+                    e.target.mute();
+
+                    e.target.playVideo();
+
+                }
+
+
+            </script>
+            {# youtube url from id #}
+
+            <script>
+                url = "{{ post.video }}";
+                videoid = youtube_parser(url);
+
+                function youtube_parser(url) {
+                    var regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+                    var match = url.match(regExp);
+                    return (match && match[7].length == 11) ? match[7] : false;
+                }
+            </script>
+        {% endif %}
+    </div>
+    <hr>
+    <a class="btn btn-default" href="{% url 'add_comment_to_post' pk=post.pk %}">Add comment</a>
+    {% for comment in post.comments.all %}
+        {% if user.is_authenticated or comment.approved_comment %}
+            <div class="comment">
+                <div class="date">
+                    {{ comment.created_date }}
+                    {% if not comment.approved_comment %}
+                        <a class="btn btn-default" href="{% url 'comment_remove' pk=comment.pk %}"><span class="glyphicon glyphicon-remove"></span></a>
+                        <a class="btn btn-default" href="{% url 'comment_approve' pk=comment.pk %}"><span class="glyphicon glyphicon-ok"></span></a>
+                    {% endif %}
+                </div>
+                <strong>{{ comment.author }}</strong>
+                <p>{{ comment.text|linebreaks }}</p>
+            </div>
+        {% endif %}
+    {% empty %}
+        <p>No comments here yet :(</p>
+    {% endfor %}
+{% endblock %}
